@@ -56,6 +56,7 @@
 // pi-lens-ignore: clang:pp_file_not_found
 #include "Group/Group.h"
 #include "Database/DatabaseEnv.h"
+#include "Config/Config.h"
 #include <cctype>
 #include <ctime>
 #include <memory>
@@ -872,6 +873,74 @@ static bool HandleMatureCommand(ChatHandler* handler, char const* args)
     }
     else
         handler->PSendSysMessage("Bot %s has no AI yet.", resolvedName.c_str());
+    return true;
+}
+
+// Remote orders: the same whisper-command surface as `.bot command`, but usable
+// without a player in the world (server console, SOAP, RA), so an external
+// controller can steer a bot. The bot is recorded as the sender of its own
+// order, which always passes PlayerbotSecurity (same account); its replies are
+// therefore not returned to the caller. Only bots named in
+// TortoiseBots.RemoteOrderBots accept orders; an empty list disables the command.
+static bool IsRemoteOrderBot(std::string name)
+{
+    if (!normalizePlayerName(name))
+        return false;
+
+    std::stringstream list(sConfig.GetStringDefault("TortoiseBots.RemoteOrderBots", ""));
+    std::string entry;
+    while (std::getline(list, entry, ','))
+    {
+        entry = Trim(entry);
+        if (!entry.empty() && normalizePlayerName(entry) && entry == name)
+            return true;
+    }
+    return false;
+}
+
+static bool HandleRemoteOrder(ChatHandler* handler, char const* args)
+{
+    // A player session needs GM rights; console, SOAP and RA have no session.
+    WorldSession* session = handler->GetSession();
+    if (session && session->GetSecurity() < SEC_GAMEMASTER)
+    {
+        handler->PSendSysMessage("Your account may not send remote bot orders.");
+        return true;
+    }
+
+    std::string input = Trim(args ? args : "");
+    size_t separator = input.find_first_of(" \t");
+    std::string botName = separator == std::string::npos ? input : input.substr(0, separator);
+    std::string command = separator == std::string::npos ? "" : Trim(input.substr(separator + 1));
+    if (command.empty() || !normalizePlayerName(botName))
+    {
+        handler->PSendSysMessage("Usage: .bot order <botName> <Playerbot command>");
+        return true;
+    }
+
+    if (!IsRemoteOrderBot(botName))
+    {
+        handler->PSendSysMessage("Bot %s is not listed in TortoiseBots.RemoteOrderBots.", botName.c_str());
+        return true;
+    }
+
+    Player* bot = sObjectAccessor.FindPlayerByName(botName.c_str());
+    BotRecord* record = bot ? BotManager::Instance().FindBot(bot->GetObjectGuid()) : nullptr;
+    if (!bot || !IsLiveHeadlessBot(bot, record))
+    {
+        handler->PSendSysMessage("Bot %s is not online.", botName.c_str());
+        return true;
+    }
+
+    PlayerbotAI* ai = PlayerbotAIStorage::Instance().GetAI(bot);
+    if (!ai)
+    {
+        handler->PSendSysMessage("Bot %s has no AI yet.", botName.c_str());
+        return true;
+    }
+
+    ai->HandleCommand(CHAT_MSG_WHISPER, command, *bot);
+    handler->PSendSysMessage("Order for %s queued: %s", botName.c_str(), command.c_str());
     return true;
 }
 
@@ -3993,6 +4062,8 @@ bool HandleChatCommand(ChatHandler* handler, char const* args)
         return HandleTrade(handler, subArgs);
     if (cmd == "command")
         return HandleMatureCommand(handler, subArgs);
+    if (cmd == "order")
+        return HandleRemoteOrder(handler, subArgs);
     if (cmd == "inv" || cmd == "inventory")
         return HandleInventory(handler, subArgs);
     if (cmd == "item")

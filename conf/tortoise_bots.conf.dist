@@ -38,6 +38,15 @@ TortoiseBots.PendingAddRemoveTest.CharacterGuid = 0
 # Errors are always written regardless of this setting.
 TortoiseBots.LogLevel = 2
 
+# Remote bot orders. `.bot order <BotName> <command>` passes a whisper command
+# to a bot without a player in the world: from the server console, SOAP or RA
+# (and in game for GM accounts). Meant for external controllers such as a
+# scripted or LLM-driven agent. Only the comma-separated bot names listed here
+# accept orders; empty (default) disables the command. Read on every order, so
+# `.reload config` applies a new list.
+# Example: TortoiseBots.RemoteOrderBots = John,Kuryr
+TortoiseBots.RemoteOrderBots =
+
 # Travel/terrain lookups run inline on the world thread when disabled (safe).
 # Cores whose MMapManager does not support concurrent tile loading (e.g. Penqle /
 # vmangos) MUST keep this at 0 to avoid a worker-thread SIGSEGV; set 1 only on

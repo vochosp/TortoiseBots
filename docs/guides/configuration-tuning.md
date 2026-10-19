@@ -17,9 +17,9 @@ TortoiseBots provides a rich set of feature flags and tuning knobs. Whether you 
 
 Configuration lives in two installed files. The first install creates them from their templates (installed beside them as `.dist`); later installs never overwrite them, so compare with the `.dist` after an update to pick up new keys (a missing key uses its default):
 1. `aiplayerbot.conf`, installed next to `mangosd.conf` — every `AiPlayerbot.*` gameplay flag, QoL toggle, AI threshold and service. Template: `ai/playerbot/aiplayerbot.conf.dist.in`. A different path can be set with `AiPlayerbot.ConfigFile` in `mangosd.conf`.
-2. `modules/tortoise_bots.conf` in the server config directory — `TortoiseBots.*` module options (log level, telemetry). Template: `conf/tortoise_bots.conf.dist`.
+2. `modules/tortoise_bots.conf` in the server config directory — `TortoiseBots.*` module options (log level, telemetry, `TortoiseBots.RemoteOrderBots` for `.bot order`). Template: `conf/tortoise_bots.conf.dist`.
 
-Both are read once at server start; `.reload config` only re-applies `TortoiseBots.LogLevel`. A line that is commented out (`#`) in the template sets nothing — the code default listed below applies.
+Both are read once at server start; `.reload config` only re-applies `TortoiseBots.LogLevel` and `TortoiseBots.RemoteOrderBots` (read on every `.bot order`). A line that is commented out (`#`) in the template sets nothing — the code default listed below applies.
 
 ---
 

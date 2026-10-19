@@ -173,6 +173,19 @@ In addition to high-level `.bot action` party commands, you can delegate command
 # Example: .bot command Dudette trainer
 ```
 
+### Remote orders (`.bot order`)
+
+`.bot order <BotName> <command>` passes the same whisper commands to a bot without a player in the world: from the server console, SOAP or RA, and in game for GM accounts. It is meant for external controllers (a scripted or LLM-driven agent) that steer a bot over SOAP.
+
+```text
+.bot order <BotName> <command>
+# Example (SOAP or console): bot order John go travel Westfall
+```
+
+- Only bots listed in `TortoiseBots.RemoteOrderBots` (comma-separated names in `tortoise_bots.conf`) accept orders; the list is empty by default, which disables the command. It is read on every order, so `.reload config` applies a new list.
+- The bot must be online as a headless bot (for example after `.bot add`).
+- The bot is recorded as the sender of its own order, so the order passes the normal whisper-command gate for any bot account. Its replies (such as "Traveling to Westfall") go to the bot itself and are not returned to the caller; the caller only gets `Order for <Name> queued: <command>`. Check the result in the game state.
+
 ### Comprehensive Whisper Command Cheat-Sheet
 
 | Category | Command / Whisper | What It Does |
